@@ -1,0 +1,53 @@
+name: WikiClicks Production Dataset
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'cloud_builder/**'
+      - '.github/workflows/wikiclicks-production.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free runner disk
+        run: |
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: cloud_builder/requirements.txt
+
+      - name: Install builder dependencies
+        run: python -m pip install -r cloud_builder/requirements.txt
+
+      - name: Build complete German Wikipedia game dataset
+        working-directory: cloud_builder
+        run: python -u main.py
+
+      - name: Show manifest
+        if: always()
+        run: |
+          if [ -f cloud_builder/cloud_run/output/manifest.json ]; then
+            cat cloud_builder/cloud_run/output/manifest.json
+          fi
+
+      - name: Upload WikiClicks production dataset
+        uses: actions/upload-artifact@v4
+        with:
+          name: WikiClicks-Production-Dataset
+          path: cloud_builder/cloud_run/output/*
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error

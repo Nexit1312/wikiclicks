@@ -1,0 +1,11 @@
+name: WikiClicks cloud check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "WikiClicks cloud runner ready"
